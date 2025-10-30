@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useCalendarStore } from './store/calendarStore';
 import { CalendarPage } from './render/CalendarPage';
 import { EventItem } from './domain/models';
@@ -7,9 +7,12 @@ import { RECURRENCE_PRESETS, describeRRule } from './domain/recurrence';
 import { getSupportedCountries } from './domain/holidays';
 import { ICSImportModal } from './components/ICSImportModal';
 import { parseICSFile, ParsedICSEvent, convertToEventItem } from './domain/icsImport';
+import { LicensePrompt } from './components/LicensePrompt';
+import { useLicenseStore } from './store/licenseStore';
 
 function App() {
   const { isLoading } = useInitializeStore();
+  const { license, setShowLicensePrompt } = useLicenseStore();
   
   const {
     currentYear,
@@ -158,6 +161,9 @@ function App() {
           onCancel={() => setImportingEvents(null)}
         />
       )}
+
+      {/* License Prompt */}
+      <LicensePrompt />
       {/* Control Bar */}
       <div className="no-print bg-white border-b border-gray-200 p-4 shadow-sm">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -213,6 +219,18 @@ function App() {
             >
               🖨️ Print
             </button>
+            {license?.valid ? (
+              <div className="badge badge-success badge-sm">
+                ✓ Licensed
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowLicensePrompt(true)}
+                className="btn btn-sm btn-outline"
+              >
+                🔑 Activate
+              </button>
+            )}
           </div>
         </div>
 

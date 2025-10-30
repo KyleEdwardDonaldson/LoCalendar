@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useCalendarStore } from './calendarStore';
 import { dbOperations } from './db';
+import { useLicenseStore } from './licenseStore';
 
 export function useInitializeStore() {
   const [isLoading, setIsLoading] = useState(true);
   const { setPrefs, events } = useCalendarStore();
+  const { loadSavedLicense } = useLicenseStore();
 
   useEffect(() => {
     async function loadData() {
@@ -25,6 +27,9 @@ export function useInitializeStore() {
         
         // Update store with loaded events
         useCalendarStore.setState({ events: allEvents });
+        
+        // Load saved license
+        loadSavedLicense();
         
       } catch (error) {
         console.error('Failed to load data from database:', error);
