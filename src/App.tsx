@@ -5,6 +5,8 @@ import { EventItem } from './domain/models';
 import { useInitializeStore } from './store/useInitializeStore';
 import { RECURRENCE_PRESETS, describeRRule } from './domain/recurrence';
 import { getSupportedCountries } from './domain/holidays';
+import { ICSImportModal } from './components/ICSImportModal';
+import { parseICSFile, ParsedICSEvent, convertToEventItem } from './domain/icsImport';
 
 function App() {
   const { isLoading } = useInitializeStore();
@@ -27,6 +29,8 @@ function App() {
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceType, setRecurrenceType] = useState<string>('none');
   const [showSettings, setShowSettings] = useState(false);
+  const [importingEvents, setImportingEvents] = useState<ParsedICSEvent[] | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleAddEvent = () => {
     if (!newEventTitle.trim() || !selectedDate) return;
@@ -73,6 +77,50 @@ function App() {
     window.print();
   };
 
+  const handleFileUpload = async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsedEvents = parseICSFile(text);
+      setImportingEvents(parsedEvents);
+    } catch (error) {
+      alert('Failed to parse ICS file. Please make sure it\'s a valid calendar file.');
+      console.error(error);
+    }
+  };
+
+  const handleImportEvents = (selectedEvents: ParsedICSEvent[]) => {
+    const eventItems = selectedEvents.map(convertToEventItem);
+    eventItems.forEach((event) => addEvent(event));
+    setImportingEvents(null);
+    alert(`Successfully imported ${eventItems.length} events!`);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const icsFile = files.find(
+      (file) => file.name.endsWith('.ics') || file.type === 'text/calendar'
+    );
+
+    if (icsFile) {
+      await handleFileUpload(icsFile);
+    } else {
+      alert('Please drop a valid .ics calendar file');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -85,7 +133,31 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen bg-gray-50"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="fixed inset-0 bg-blue-500 bg-opacity-20 border-4 border-dashed border-blue-500 z-40 flex items-center justify-center pointer-events-none">
+          <div className="bg-white rounded-lg p-8 shadow-xl">
+            <div className="text-3xl mb-2">📥</div>
+            <div className="text-xl font-bold">Drop ICS file to import</div>
+            <div className="text-gray-600 mt-2">Google Calendar exports supported</div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {importingEvents && (
+        <ICSImportModal
+          events={importingEvents}
+          onImport={handleImportEvents}
+          onCancel={() => setImportingEvents(null)}
+        />
+      )}
       {/* Control Bar */}
       <div className="no-print bg-white border-b border-gray-200 p-4 shadow-sm">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -111,6 +183,18 @@ function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            <label className="btn btn-sm btn-secondary cursor-pointer">
+              📥 Import ICS
+              <input
+                type="file"
+                accept=".ics,text/calendar"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file);
+                }}
+                className="hidden"
+              />
+            </label>
             <button
               onClick={() => setShowSettings(!showSettings)}
               className="btn btn-sm btn-ghost"
