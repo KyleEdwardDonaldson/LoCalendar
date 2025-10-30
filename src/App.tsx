@@ -124,6 +124,27 @@ function App() {
     }
   };
 
+  // Check if running in Tauri
+  const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+  
+  if (!isTauri) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md p-8">
+          <div className="text-4xl mb-4">📱</div>
+          <div className="text-2xl font-bold mb-4">Desktop App Required</div>
+          <div className="text-gray-600 mb-6">
+            LoCalendar requires the desktop application for license verification and full functionality.
+          </div>
+          <div className="space-y-2 text-sm text-left bg-gray-100 p-4 rounded">
+            <div className="font-semibold">To run LoCalendar:</div>
+            <code className="block bg-white p-2 rounded">npm run tauri dev</code>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

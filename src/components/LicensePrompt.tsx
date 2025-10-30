@@ -22,17 +22,22 @@ export const LicensePrompt: React.FC = () => {
 
   const handleGenerateDemo = async () => {
     try {
-      const demoLicense = await invoke<string>('generate_demo_license', { email: demoEmail });
-      setLicenseKey(demoLicense);
-      setMode('enter');
+      // Check if we're in Tauri
+      if (typeof window !== 'undefined' && '__TAURI__' in window) {
+        const demoLicense = await invoke<string>('generate_demo_license', { email: demoEmail });
+        setLicenseKey(demoLicense);
+        setMode('enter');
+      } else {
+        alert('Demo license generation requires the desktop app. Run: npm run tauri dev');
+      }
     } catch (error) {
       alert('Demo license generation is only available in development mode');
     }
   };
 
   const handleSkip = () => {
-    // Allow using app without license (view-only mode)
-    setShowLicensePrompt(false);
+    // Don't allow skipping - license required
+    alert('A valid license is required to use LoCalendar');
   };
 
   if (!showLicensePrompt) return null;
@@ -84,7 +89,7 @@ export const LicensePrompt: React.FC = () => {
                 </ul>
               </div>
 
-              {import.meta.env.DEV && (
+              {import.meta.env.DEV && typeof window !== 'undefined' && '__TAURI__' in window && (
                 <button
                   onClick={() => setMode('demo')}
                   className="btn btn-sm btn-ghost w-full"
@@ -127,11 +132,11 @@ export const LicensePrompt: React.FC = () => {
           {mode === 'enter' ? (
             <>
               <button
-                onClick={handleSkip}
+                onClick={() => window.open('https://gumroad.com/your-product', '_blank')}
                 className="btn btn-outline flex-1"
                 disabled={isChecking}
               >
-                Skip (View Only)
+                Buy License
               </button>
               <button
                 onClick={handleVerify}
