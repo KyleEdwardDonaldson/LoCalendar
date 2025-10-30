@@ -1,6 +1,8 @@
 import React from 'react';
 import { CalendarPrefs, EventItem } from '../domain/models';
 import { computeGrid, formatMonth, getPageDims, getWeekdayNames, getInnerBox } from '../domain/layout';
+import { getEventsForMonth } from '../domain/recurrence';
+import { getHolidaysForMonth } from '../domain/holidays';
 
 interface CalendarPageProps {
   year: number;
@@ -23,21 +25,13 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
   const weekdays = getWeekdayNames(locale);
   const monthTitle = formatMonth(month, year, locale);
   
-  // Filter events for this month
-  const monthEvents = events.filter((event) => {
-    const eventDate = new Date(event.date);
-    return eventDate.getFullYear() === year && eventDate.getMonth() === month;
-  });
+  // Get events for this month, including recurring events
+  const eventsByDay = getEventsForMonth(events, year, month);
   
-  // Group events by day
-  const eventsByDay = new Map<number, EventItem[]>();
-  monthEvents.forEach((event) => {
-    const day = new Date(event.date).getDate();
-    if (!eventsByDay.has(day)) {
-      eventsByDay.set(day, []);
-    }
-    eventsByDay.get(day)!.push(event);
-  });
+  // Get holidays if country is set
+  const holidaysByDay = prefs.holidaysCountry 
+    ? getHolidaysForMonth(prefs.holidaysCountry, year, month)
+    : new Map();
   
   return (
     <svg
@@ -86,6 +80,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
       {/* Calendar Grid */}
       {grid.cells.map((cell) => {
         const cellEvents = eventsByDay.get(cell.day) || [];
+        const cellHolidays = holidaysByDay.get(cell.day) || [];
         
         return (
           <g key={cell.key}>
@@ -112,12 +107,26 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
               {cell.day}
             </text>
             
+            {/* Holidays */}
+            {cellHolidays.map((holiday, idx) => (
+              <text
+                key={`holiday-${idx}`}
+                x={cell.x + 2}
+                y={cell.y + 6 + idx * 3.5}
+                fontSize="6pt"
+                fill="#dc2626"
+                fontWeight="600"
+              >
+                🎉 {holiday.name.slice(0, 12)}{holiday.name.length > 12 ? '...' : ''}
+              </text>
+            ))}
+            
             {/* Events (simple markers) */}
             {cellEvents.slice(0, 3).map((event, idx) => (
               <text
                 key={`event-${event.id}`}
                 x={cell.x + 2}
-                y={cell.y + 10 + (idx + 1) * 4}
+                y={cell.y + 10 + (cellHolidays.length * 3.5) + (idx + 1) * 4}
                 fontSize="7pt"
                 fill={prefs.theme.palette.accent || '#0066cc'}
                 style={{ fontSize: '7pt' }}
@@ -128,7 +137,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
             {cellEvents.length > 3 && (
               <text
                 x={cell.x + 2}
-                y={cell.y + 10 + 4 * 4}
+                y={cell.y + 10 + (cellHolidays.length * 3.5) + 4 * 4}
                 fontSize="7pt"
                 fill={prefs.theme.palette.secondary || '#666666'}
               >

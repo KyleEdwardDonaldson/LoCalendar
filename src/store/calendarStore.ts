@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { CalendarPrefs, EventItem, createDefaultPrefs } from '../domain/models';
+import { dbOperations } from './db';
 
 interface CalendarState {
   // Current view
@@ -49,25 +50,32 @@ export const useCalendarStore = create<CalendarState>((set) => {
     // Actions
     setCurrentMonth: (year, month) => set({ currentYear: year, currentMonth: month }),
     
-    setPrefs: (prefsOrUpdater) => set((state) => ({
-      prefs: typeof prefsOrUpdater === 'function' 
+    setPrefs: (prefsOrUpdater) => set((state) => {
+      const newPrefs = typeof prefsOrUpdater === 'function' 
         ? prefsOrUpdater(state.prefs)
-        : prefsOrUpdater
-    })),
+        : prefsOrUpdater;
+      dbOperations.savePrefs(newPrefs).catch(console.error);
+      return { prefs: newPrefs };
+    }),
     
-    addEvent: (event) => set((state) => ({
-      events: [...state.events, event],
-    })),
+    addEvent: (event) => set((state) => {
+      dbOperations.saveEvent(event).catch(console.error);
+      return { events: [...state.events, event] };
+    }),
     
-    updateEvent: (id, updates) => set((state) => ({
-      events: state.events.map((event) =>
-        event.id === id ? { ...event, ...updates } : event
-      ),
-    })),
+    updateEvent: (id, updates) => set((state) => {
+      dbOperations.updateEvent(id, updates).catch(console.error);
+      return {
+        events: state.events.map((event) =>
+          event.id === id ? { ...event, ...updates } : event
+        ),
+      };
+    }),
     
-    deleteEvent: (id) => set((state) => ({
-      events: state.events.filter((event) => event.id !== id),
-    })),
+    deleteEvent: (id) => set((state) => {
+      dbOperations.deleteEvent(id).catch(console.error);
+      return { events: state.events.filter((event) => event.id !== id) };
+    }),
     
     setSelectedDate: (date) => set({ selectedDate: date }),
     
