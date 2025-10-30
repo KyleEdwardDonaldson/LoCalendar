@@ -10,8 +10,9 @@ A customizable, printable calendar application built with Tauri 2.x + React. Off
 - ✅ **Multiple paper sizes** (A5, A4, A3) with portrait/landscape support
 - ✅ **Event management** with one-time and recurring events (via RFC5545 RRULE)
 - ✅ **Print CSS** for perfect browser-based printing
-- 🚧 **Holiday overlays** with country-specific calendars
-- 🚧 **ICS import** for Google Calendar integration
+- ✅ **Holiday overlays** with country-specific calendars (20+ countries)
+- ✅ **ICS import** for Google Calendar integration with preview/selection UI
+- ✅ **Data persistence** with IndexedDB (offline-first)
 - 🚧 **Offline licensing** with Ed25519 signed tokens
 - 🚧 **Theme customization** with draggable elements
 
@@ -75,22 +76,24 @@ src/
 
 ## Current Status
 
-### ✅ Completed (MVP Phase 1)
+### ✅ Completed (MVP Phase 1-3)
 - [x] Project scaffolding with Tauri + React
 - [x] TailwindCSS + FlyonUI setup
 - [x] Domain models with Zod validation
 - [x] Calendar layout engine (SVG, sized in mm)
 - [x] Event store with Zustand
 - [x] Basic UI with month navigation
-- [x] Add/view events
+- [x] Add/view/delete events
 - [x] Print styles (@media print, @page)
+- [x] Data persistence (IndexedDB with Dexie)
+- [x] Recurrence support (RRULE with presets)
+- [x] Holiday overlay (20+ countries)
+- [x] ICS import with preview/selection UI
 
 ### 🚧 In Progress
-- [ ] Data persistence (SQLite/IndexedDB)
-- [ ] Recurrence support (RRULE editor)
-- [ ] Holiday overlay (date-holidays integration)
-- [ ] ICS import (drag & drop)
 - [ ] Licensing system (Ed25519 verification)
+- [ ] Theme customization UI
+- [ ] PDF export
 
 ## Usage
 
@@ -99,7 +102,25 @@ src/
 1. Click "+ Add Event" in the top bar
 2. Select a date
 3. Enter event title
-4. Click "Add"
+4. (Optional) Check "Recurring" and select pattern
+5. Click "Add"
+
+### Importing from Google Calendar
+
+1. Export your Google Calendar as .ics file
+2. Either:
+   - Drag and drop the .ics file anywhere on the app
+   - Click "📥 Import ICS" button and select file
+3. Review events in the preview screen
+4. Use search and filters to refine selection
+5. Select/deselect events as needed
+6. Click "Import" to add selected events
+
+### Managing Holidays
+
+1. Click "⚙️ Settings" button
+2. Select your country from the dropdown
+3. Holidays will automatically appear on the calendar
 
 ### Printing
 
